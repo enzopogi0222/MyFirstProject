@@ -8,7 +8,7 @@ using MySql.Data.MySqlClient;
 
 namespace MyFirstProject
 {
-    
+
     public partial class Form1 : Form
     {
         private string connectionString = "server=localhost;user=root;password=;database=student_db";
@@ -43,14 +43,14 @@ namespace MyFirstProject
             MessageBox.Show("Student Added!");
 
             students.Add(new Student { Name = name, Age = age });
-            
+
             txtName.Clear();
             txtAge.Clear();
 
 
         }
 
-       
+
         private void label1_Click(object sender, EventArgs e)
         {
 
@@ -89,7 +89,7 @@ namespace MyFirstProject
 
         private void txtName_Keypress(object sender, KeyPressEventArgs e)
         {
-            if(!char.IsLetter(e.KeyChar) && !char.IsWhiteSpace(e.KeyChar) && !char.IsControl(e.KeyChar))
+            if (!char.IsLetter(e.KeyChar) && !char.IsWhiteSpace(e.KeyChar) && !char.IsControl(e.KeyChar))
             {
                 e.Handled = true;
             }
@@ -110,6 +110,34 @@ namespace MyFirstProject
             }
         }
 
+        private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (dataGridViewStudents.CurrentRow == null) return;
+
+            txtName.Text = dataGridViewStudents.CurrentRow.Cells["Name"].Value.ToString();
+            txtAge.Text = dataGridViewStudents.CurrentRow.Cells["Age"].Value.ToString();
+        }
+        private void btnEdit_Click(object sender, EventArgs e)
+        {
+            if (dataGridViewStudents.CurrentRow == null)
+            {
+                MessageBox.Show("Select a student to edit.");
+                return;
+            }
+
+            if (!int.TryParse(txtAge.Text, out int age))
+            {
+               MessageBox.Show("Age must be a valid number.");
+                return;
+            }
+
+            DataGridViewRow row = dataGridViewStudents.CurrentRow;
+            row.Cells["Name"].Value = txtName.Text;
+            row.Cells["Age"].Value = age;
+
+            MessageBox.Show("Student details updated.");
+
+        }
 
     }
 
@@ -117,5 +145,10 @@ namespace MyFirstProject
     {
         public string Name { get; set; }
         public int Age { get; set; }
+
+        public override string ToString()
+        {
+            return $"Name: {Name}, Age: {Age}";
+        }
     }
 }

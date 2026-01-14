@@ -35,6 +35,7 @@
             btnAdd = new Button();
             btnList = new Button();
             dataGridViewStudents = new DataGridView();
+            btnEdit = new Button();
             ((System.ComponentModel.ISupportInitialize)dataGridViewStudents).BeginInit();
             SuspendLayout();
             // 
@@ -85,7 +86,7 @@
             // 
             // btnList
             // 
-            btnList.Location = new Point(390, 201);
+            btnList.Location = new Point(320, 201);
             btnList.Name = "btnList";
             btnList.Size = new Size(109, 23);
             btnList.TabIndex = 5;
@@ -96,16 +97,28 @@
             // dataGridViewStudents
             // 
             dataGridViewStudents.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dataGridViewStudents.Location = new Point(205, 258);
+            dataGridViewStudents.Location = new Point(205, 241);
             dataGridViewStudents.Name = "dataGridViewStudents";
             dataGridViewStudents.Size = new Size(326, 222);
             dataGridViewStudents.TabIndex = 6;
+            // 
+            // btnEdit
+            // 
+            btnEdit.Location = new Point(435, 201);
+            btnEdit.Name = "btnEdit";
+            btnEdit.Size = new Size(109, 23);
+            btnEdit.TabIndex = 7;
+            btnEdit.Text = "Edit";
+            btnEdit.UseVisualStyleBackColor = true;
+            btnEdit.Click += btnEdit_Click;
             // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
+            BackColor = SystemColors.ActiveCaption;
             ClientSize = new Size(790, 559);
+            Controls.Add(btnEdit);
             Controls.Add(dataGridViewStudents);
             Controls.Add(btnList);
             Controls.Add(btnAdd);
@@ -130,5 +143,6 @@
         private Button btnAdd;
         private Button btnList;
         private DataGridView dataGridViewStudents;
+        private Button btnEdit;
     }
 }
