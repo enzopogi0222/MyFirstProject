@@ -1,0 +1,16 @@
+# Visual Studio cache and temp files
+.vs/
+*.user
+*.suo
+*.sln.docstates
+
+# Build outputs
+bin/
+obj/
+
+# Database connection configs (optional)
+*.config
+
+# System files
+Thumbs.db
+*.DS_Store
