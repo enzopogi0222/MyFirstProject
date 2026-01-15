@@ -81,11 +81,23 @@ namespace MyFirstProject
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            dataGridViewStudents.ColumnCount = 2;
-            dataGridViewStudents.Columns[0].Name = "Name";
-            dataGridViewStudents.Columns[1].Name = "Age";
+            dataGridViewStudents.AutoGenerateColumns = false;
+            dataGridViewStudents.Columns.Clear();
 
+
+            dataGridViewStudents.Columns.Add("Name", "Name");
+            dataGridViewStudents.Columns.Add("Age", "Age");
+
+            DataGridViewButtonColumn editButton = new DataGridViewButtonColumn();
+
+            editButton.Name = "Edit";
+            editButton.Text = "Edit";
+            editButton.UseColumnTextForButtonValue = true;
+
+            dataGridViewStudents.Columns.Add(editButton);
         }
+
+
 
         private void txtName_Keypress(object sender, KeyPressEventArgs e)
         {
@@ -112,10 +124,24 @@ namespace MyFirstProject
 
         private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
-            if (dataGridViewStudents.CurrentRow == null) return;
+            if (e.RowIndex < 0) return;
 
-            txtName.Text = dataGridViewStudents.CurrentRow.Cells["Name"].Value.ToString();
-            txtAge.Text = dataGridViewStudents.CurrentRow.Cells["Age"].Value.ToString();
+
+            if (dataGridViewStudents.Columns[e.ColumnIndex].Name == "Edit")
+            {
+                DataGridViewRow row = dataGridViewStudents.Rows[e.RowIndex];
+
+                txtEditName.Text = row.Cells["Name"].Value.ToString();
+                txtEditAge.Text = row.Cells["Age"].Value.ToString();
+
+
+                pnlEditStudent.Tag = e.RowIndex;
+                pnlEditStudent.Visible = true;
+
+
+
+            }
+
         }
         private void btnEdit_Click(object sender, EventArgs e)
         {
@@ -127,7 +153,7 @@ namespace MyFirstProject
 
             if (!int.TryParse(txtAge.Text, out int age))
             {
-               MessageBox.Show("Age must be a valid number.");
+                MessageBox.Show("Age must be a valid number.");
                 return;
             }
 
@@ -139,7 +165,96 @@ namespace MyFirstProject
 
         }
 
+        private void textBox1_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void label2_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void txtEditName_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+
+
+        private void panel1_Paint(object sender, PaintEventArgs e)
+        {
+
+        }
+
+        private void btnSave_Click(object sender, EventArgs e)
+        {
+            if (pnlEditStudent.Tag == null)
+            {
+                MessageBox.Show("No Student Selected.");
+                return;
+            }
+
+            string newName = txtEditName.Text.Trim();
+            if (string.IsNullOrWhiteSpace(newName))
+            {
+                MessageBox.Show("Name is required and must not contain numbers.");
+                return;
+            }
+
+            if (newName.Any(char.IsDigit))
+            {
+                MessageBox.Show("Name must not contain numbers");
+                return;
+            }
+
+            if (!int.TryParse(txtEditAge.Text, out int newAge))
+            {
+                MessageBox.Show("Age Must be a valid number.");
+                return;
+            }
+
+            int rowIndex = (int)pnlEditStudent.Tag;
+            DataGridViewRow row = dataGridViewStudents.Rows[rowIndex];
+
+            //Old values
+            string oldName = row.Cells["Name"].Value.ToString();
+            int oldAge = Convert.ToInt32(row.Cells["Age"].Value);
+
+            //update query
+            using (var conn = new MySql.Data.MySqlClient.MySqlConnection(connectionString))
+            {
+                conn.Open();
+                string query = @"UPDATE students 
+                         SET Name = @newName, Age = @newAge 
+                         WHERE Name = @oldName AND Age = @oldAge";
+
+                using (var cmd = new MySql.Data.MySqlClient.MySqlCommand(query, conn))
+                {
+                    cmd.Parameters.AddWithValue("@newName", newName);
+                    cmd.Parameters.AddWithValue("@newAge", newAge);
+                    cmd.Parameters.AddWithValue("@oldName", oldName);
+                    cmd.Parameters.AddWithValue("@oldAge", oldAge);
+
+                    cmd.ExecuteNonQuery();  
+                }
+            }
+
+            //update grid
+            row.Cells["Name"].Value = newName;
+            row.Cells["Age"].Value = newAge;
+
+            pnlEditStudent.Visible = false;
+            MessageBox.Show("Student updated successfully!");
+
+        }
+
+        private void btnCancelEdit_Click(object sender, EventArgs e)
+        {
+            pnlEditStudent.Visible = false;
+        }
     }
+}
 
     class Student
     {
@@ -151,4 +266,3 @@ namespace MyFirstProject
             return $"Name: {Name}, Age: {Age}";
         }
     }
-}
