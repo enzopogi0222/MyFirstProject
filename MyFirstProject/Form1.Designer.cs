@@ -112,7 +112,7 @@
             dataGridViewStudents.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             dataGridViewStudents.Size = new Size(550, 400);
             dataGridViewStudents.TabIndex = 6;
-            dataGridViewStudents.CellContentClick += dataGridView1_CellContentClick;
+            dataGridViewStudents.CellContentClick += dataGridViewStudents_CellContentClick;
             // 
             // txtSearch
             // 
