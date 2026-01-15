@@ -68,13 +68,17 @@ namespace MyFirstProject
             using (var conn = new MySqlConnection(connectionString))
             {
                 conn.Open();
-                string query = "SELECT Name, Age FROM Students";
+                string query = "SELECT id, Name, Age FROM Students";
                 using (var cmd = new MySqlCommand(query, conn))
                 using (var reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
                     {
-                        dataGridViewStudents.Rows.Add(reader.GetString("Name"), reader.GetInt32("Age"));
+                        dataGridViewStudents.Rows.Add(
+                        reader.GetInt32("id"),    
+                        reader.GetString("Name"),
+                        reader.GetInt32("Age")
+                   );
                     }
                 }
             }
@@ -85,6 +89,9 @@ namespace MyFirstProject
             dataGridViewStudents.AutoGenerateColumns = false;
             dataGridViewStudents.Columns.Clear();
 
+            dataGridViewStudents.Columns.Add("Id", "ID");
+            dataGridViewStudents.Columns["Id"].Visible = false;
+
 
             dataGridViewStudents.Columns.Add("Name", "Name");
             dataGridViewStudents.Columns.Add("Age", "Age");
@@ -94,8 +101,14 @@ namespace MyFirstProject
             editButton.Name = "Edit";
             editButton.Text = "Edit";
             editButton.UseColumnTextForButtonValue = true;
-
             dataGridViewStudents.Columns.Add(editButton);
+
+            DataGridViewButtonColumn deleteButton = new DataGridViewButtonColumn();
+            
+            deleteButton.Name = "Delete";
+            deleteButton.Text = "Delete";
+            deleteButton.UseColumnTextForButtonValue = true;
+            dataGridViewStudents.Columns.Add(deleteButton);
         }
 
 
@@ -113,12 +126,16 @@ namespace MyFirstProject
             using (var conn = new MySqlConnection(connectionString))
             {
                 conn.Open();
-                string query = "INSERT INTO STUDENTS (Name, Age) VALUES (@name, @age)";
+                string query = "INSERT INTO STUDENTS (Name, Age) VALUES (@name, @age); SELECT LAST_INSERT_ID();";
                 using (var cmd = new MySqlCommand(query, conn))
                 {
                     cmd.Parameters.AddWithValue("@name", name);
                     cmd.Parameters.AddWithValue("@age", age);
-                    cmd.ExecuteNonQuery();
+
+                    object result = cmd.ExecuteScalar();
+                    int newId = result != null ? Convert.ToInt32(result) : 0;
+
+                    dataGridViewStudents.Rows.Add(newId, name, age);
                 }
             }
         }
@@ -127,21 +144,44 @@ namespace MyFirstProject
         {
             if (e.RowIndex < 0) return;
 
+            DataGridViewRow row = dataGridViewStudents.Rows[e.RowIndex];
+
 
             if (dataGridViewStudents.Columns[e.ColumnIndex].Name == "Edit")
             {
-                DataGridViewRow row = dataGridViewStudents.Rows[e.RowIndex];
-
                 txtEditName.Text = row.Cells["Name"].Value.ToString();
                 txtEditAge.Text = row.Cells["Age"].Value.ToString();
 
 
                 pnlEditStudent.Tag = e.RowIndex;
                 pnlEditStudent.Visible = true;
-
-
-
             }
+
+            if (dataGridViewStudents.Columns[e.ColumnIndex].Name == "Delete")
+            {
+                DialogResult result = MessageBox.Show("Are you sure you want to delete this student?", "Confirm Delete", MessageBoxButtons.YesNo);
+                
+                if (result == DialogResult.Yes)
+                {
+                    int idToDelete = Convert.ToInt32(row.Cells["Id"].Value);
+
+                    using (var conn = new MySqlConnection(connectionString))
+                    {
+                        conn.Open();
+                        string query = "DELETE FROM students WHERE id = @id";
+                        using (var cmd = new MySqlCommand(query, conn))
+                        {
+                            cmd.Parameters.AddWithValue("@id", idToDelete);
+                            cmd.ExecuteNonQuery();
+                        }
+                    }
+
+                    dataGridViewStudents.Rows.RemoveAt(e.RowIndex);
+                    MessageBox.Show("Student deleted successfully!");
+                }
+            }
+
+
 
         }
         private void btnEdit_Click(object sender, EventArgs e)
@@ -190,64 +230,80 @@ namespace MyFirstProject
 
         private void btnSave_Click(object sender, EventArgs e)
         {
+            
             if (pnlEditStudent.Tag == null)
             {
-                MessageBox.Show("No Student Selected.");
+                MessageBox.Show("No student selected.");
                 return;
             }
 
+            
             string newName = txtEditName.Text.Trim();
             if (string.IsNullOrWhiteSpace(newName))
             {
-                MessageBox.Show("Name is required and must not contain numbers.");
+                MessageBox.Show("Name is required.");
                 return;
             }
-
             if (newName.Any(char.IsDigit))
             {
-                MessageBox.Show("Name must not contain numbers");
+                MessageBox.Show("Name must not contain numbers.");
                 return;
             }
 
+            
             if (!int.TryParse(txtEditAge.Text, out int newAge))
             {
-                MessageBox.Show("Age Must be a valid number.");
+                MessageBox.Show("Age must be a valid number.");
                 return;
             }
 
+           
             int rowIndex = (int)pnlEditStudent.Tag;
             DataGridViewRow row = dataGridViewStudents.Rows[rowIndex];
+            int studentId = Convert.ToInt32(row.Cells["Id"].Value);
 
-            //Old values
-            string oldName = row.Cells["Name"].Value.ToString();
-            int oldAge = Convert.ToInt32(row.Cells["Age"].Value);
-
-            //update query
-            using (var conn = new MySql.Data.MySqlClient.MySqlConnection(connectionString))
+        
+            try
             {
-                conn.Open();
-                string query = @"UPDATE students 
-                         SET Name = @newName, Age = @newAge 
-                         WHERE Name = @oldName AND Age = @oldAge";
-
-                using (var cmd = new MySql.Data.MySqlClient.MySqlCommand(query, conn))
+                using (var conn = new MySql.Data.MySqlClient.MySqlConnection(connectionString))
                 {
-                    cmd.Parameters.AddWithValue("@newName", newName);
-                    cmd.Parameters.AddWithValue("@newAge", newAge);
-                    cmd.Parameters.AddWithValue("@oldName", oldName);
-                    cmd.Parameters.AddWithValue("@oldAge", oldAge);
+                    conn.Open();
 
-                    cmd.ExecuteNonQuery();
+                    string query = @"UPDATE students 
+                             SET Name = @newName, Age = @newAge 
+                             WHERE Id = @id";
+
+                    using (var cmd = new MySql.Data.MySqlClient.MySqlCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@newName", newName);
+                        cmd.Parameters.AddWithValue("@newAge", newAge);
+                        cmd.Parameters.AddWithValue("@id", studentId);
+
+                        int affectedRows = cmd.ExecuteNonQuery();
+
+                        if (affectedRows == 0)
+                        {
+                            MessageBox.Show("Update failed. Student may not exist.");
+                            return;
+                        }
+                    }
                 }
+
+                
+                row.Cells["Name"].Value = newName;
+                row.Cells["Age"].Value = newAge;
+
+                pnlEditStudent.Visible = false;
+                MessageBox.Show("Student updated successfully!");
             }
-
-            //update grid
-            row.Cells["Name"].Value = newName;
-            row.Cells["Age"].Value = newAge;
-
-            pnlEditStudent.Visible = false;
-            MessageBox.Show("Student updated successfully!");
-
+            catch (MySql.Data.MySqlClient.MySqlException ex)
+            {
+                MessageBox.Show("SQL Error: " + ex.Message);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Unexpected Error: " + ex.Message);
+            }
         }
 
         private void btnCancelEdit_Click(object sender, EventArgs e)
@@ -266,7 +322,7 @@ namespace MyFirstProject
                 conn.Open();
 
 
-                string query = @"SELECT Name, Age 
+                string query = @"SELECT id, Name, Age 
                          FROM students 
                          WHERE Name LIKE @keyword";
 
@@ -279,6 +335,7 @@ namespace MyFirstProject
                         while (reader.Read())
                         {
                             dataGridViewStudents.Rows.Add(
+                                reader.GetInt32("id"),
                                 reader.GetString("Name"),
                                 reader.GetInt32("Age")
                             );
@@ -292,11 +349,7 @@ namespace MyFirstProject
 
     class Student
     {
+        public int Id { get; set; }
         public string Name { get; set; }
         public int Age { get; set; }
-
-        public override string ToString()
-        {
-            return $"Name: {Name}, Age: {Age}";
-        }
     }
