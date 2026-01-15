@@ -1,8 +1,9 @@
+using MySql.Data.MySqlClient;
 using System;
-using System.Windows.Forms;
+using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using MySql.Data.MySqlClient;
+using System.Windows.Forms;
 
 
 
@@ -236,7 +237,7 @@ namespace MyFirstProject
                     cmd.Parameters.AddWithValue("@oldName", oldName);
                     cmd.Parameters.AddWithValue("@oldAge", oldAge);
 
-                    cmd.ExecuteNonQuery();  
+                    cmd.ExecuteNonQuery();
                 }
             }
 
@@ -252,6 +253,39 @@ namespace MyFirstProject
         private void btnCancelEdit_Click(object sender, EventArgs e)
         {
             pnlEditStudent.Visible = false;
+        }
+
+        private void btnSearch_Click(object sender, EventArgs e)
+        {
+            string keyword = txtSearch.Text.Trim();
+
+            dataGridViewStudents.Rows.Clear();
+
+            using (var conn = new MySql.Data.MySqlClient.MySqlConnection(connectionString))
+            {
+                conn.Open();
+
+
+                string query = @"SELECT Name, Age 
+                         FROM students 
+                         WHERE Name LIKE @keyword";
+
+                using (var cmd = new MySql.Data.MySqlClient.MySqlCommand(query, conn))
+                {
+                    cmd.Parameters.AddWithValue("@keyword", "%" + keyword + "%");
+
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            dataGridViewStudents.Rows.Add(
+                                reader.GetString("Name"),
+                                reader.GetInt32("Age")
+                            );
+                        }
+                    }
+                }
+            }
         }
     }
 }

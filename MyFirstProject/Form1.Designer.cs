@@ -132,6 +132,7 @@
             btnSearch.TabIndex = 9;
             btnSearch.Text = "Search";
             btnSearch.UseVisualStyleBackColor = true;
+            btnSearch.Click += btnSearch_Click;
             // 
             // pnlEditStudent
             // 
